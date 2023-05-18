@@ -1,0 +1,6 @@
+#!/bin/bash
+
+archiveName="memSim.tgz"
+filesToArchive="memSim README"
+
+alias archive="tar -zcvf ${archiveName} ${filesToArchive}"
