@@ -30,6 +30,21 @@ def main():
 
     print(f"filename={filename}, frames={num_frames}, pra={pra}")
 
+    addresses = []
+    # Load all addresses into our array
+    with open(filename) as file:
+        for line in file:
+            addresses.append(int(line.strip()))  # Make sure that we strip off whitespace
+
+    print(f"Read addresses: {addresses}")
+
+    tlb = TLB(16)
+    page_table = PageTable()
+    mem = Memory(num_frames)
+    backing_store = BackingStore()
+
+    for address in addresses:
+
 
 if __name__ == "__main__":
     main()
