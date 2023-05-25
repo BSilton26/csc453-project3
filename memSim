@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import OrderedDict  # required since dictionaries are only ordered starting in Python 3.7
 
 parser = argparse.ArgumentParser(
     prog='memSim',
@@ -26,9 +27,9 @@ def main():
     args = parser.parse_args()
     filename = args.filename
     num_frames = args.frames
-    pra = args.pra
+    page_replacement_alg = args.pra
 
-    print(f"filename={filename}, frames={num_frames}, pra={pra}")
+    print(f"filename={filename}, frames={num_frames}, pra={page_replacement_alg}")
 
     addresses = []
     # Load all addresses into our array
@@ -38,12 +39,77 @@ def main():
 
     print(f"Read addresses: {addresses}")
 
-    tlb = TLB(16)
+    tlb = TLB()
     page_table = PageTable()
-    mem = Memory(num_frames)
-    backing_store = BackingStore()
+    memory = Memory(num_frames, page_replacement_alg)
+    backing_store = BackingStore("BACKING_STORE.bin")
 
     for address in addresses:
+        # Pages/frames are always 256 bytes => 8 bits for offset
+        # 256 pages in virtual memory => 8 bits for page number
+        # So, 16 bits for virtual addresses
+        page_num = address >> 8  # upper 8 bits
+        offset = address & 255   # lower 8 bits
+        print(f"addr: {address:>016b}")
+        print(f"page_num: {page_num:>08b}, offset: {offset:>08b}")
+        frame_num = -1
+        frame_num = tlb.lookup(page_num)
+        if frame_num >= 0:  # TLB hit
+            frame = memory.lookup(frame_num)
+            byte = frame[offset]
+            # TODO: print output
+            continue
+        # TLB miss, lookup in page table
+        frame_num = page_table.lookup(page_num)
+        if frame_num >= 0:  # Page table hit
+            tlb.update(page_num, frame_num)
+            frame = memory.lookup(frame_num)
+            byte = frame[offset]
+            # TODO: print output
+            continue
+        # Page table missed so poll backing store, then update memory, page table, TLB
+        block = backing_store.get_block(page_num)
+        frame_num = memory.put(block)
+        page_table.update(page_num, frame_num)
+        tlb.update(page_num, frame_num)
+    # TODO: print overall stats
+
+
+class TLB:
+    def __init__(self):
+        self.page_to_frame = OrderedDict([(i, -1) for i in range(-16, 0)])  # initialize dict with all negative nums
+        self.hits = 0
+        self.misses = 0
+
+    def lookup(self, page_num):
+        assert page_num >= 0
+        try:
+            frame_num = self.page_to_frame[page_num]
+            self.hits += 1
+            return frame_num
+        except KeyError:  # TLB miss
+            self.misses += 1
+            return -1
+
+    def update(self, page_num, frame_num):
+        self.page_to_frame.popitem(last=False)  # pop items from dict in FIFO order
+        self.page_to_frame[page_num] = frame_num
+        assert len(self.page_to_frame) == 16
+
+
+class PageTable:
+    # TODO: write PageTable
+    pass
+
+
+class Memory:
+    # TODO: write Memory
+    pass
+
+
+class BackingStore:
+    # TODO: write BackingStore
+    pass
 
 
 if __name__ == "__main__":
