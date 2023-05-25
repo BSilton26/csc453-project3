@@ -45,7 +45,7 @@ The specifications for this assignment are as follows:
 
 Here’s an [example input](https://drive.google.com/file/d/0B0Ogk2egn6BfcXM2NFhoZUhRaWM/view?usp=sharing&resourcekey=0-x2vXAZ1u3NDVbUJSF5erow) along with an [example output](https://drive.google.com/file/d/0B0Ogk2egn6BfYTVIcUpRU0QzUjA/view?usp=sharing&resourcekey=0-aWC0wIj5UlxLaAlnGjTRiQ).
 
-Usage
+## Usage
 The usage of the simulator is this:
 
 `memSim <reference-sequence-file.txt> <FRAMES> <PRA>`
