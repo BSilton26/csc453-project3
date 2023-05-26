@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser(
     description='A virtual memory simulator which translates virtual memory addresses to physical memory addresses.',
     usage='%(prog)s [-h] filename FRAMES PRA')
 
-parser.add_argument('filename') 
+parser.add_argument('filename')
 parser.add_argument('frames',
                     metavar='FRAMES',
                     nargs='?',
@@ -49,14 +49,14 @@ def main():
         # 256 pages in virtual memory => 8 bits for page number
         # So, 16 bits for virtual addresses
         page_num = address >> 8  # upper 8 bits
-        offset = address & 255   # lower 8 bits
+        offset = address & 255  # lower 8 bits
         print(f"addr: {address:>016b}")
         print(f"page_num: {page_num:>08b}, offset: {offset:>08b}")
         frame_num = -1
         frame_num = tlb.lookup(page_num)
         if frame_num >= 0:  # TLB hit
             frame = memory.lookup(frame_num)
-            byte = frame[offset]
+            byte = frame.data[offset]
             # TODO: print output
             continue
         # TLB miss, lookup in page table
@@ -64,7 +64,7 @@ def main():
         if frame_num >= 0:  # Page table hit
             tlb.update(page_num, frame_num)
             frame = memory.lookup(frame_num)
-            byte = frame[offset]
+            byte = frame.data[offset]
             # TODO: print output
             continue
         # Page table missed so poll backing store, then update memory, page table, TLB
@@ -122,9 +122,64 @@ class PageTable:
     def update(self, page_num, frame_num):
         self.entries[page_num] = (frame_num, True)
 
+
+class Frame:
+    def __init__(self, data):
+        self.data = data
+        self.last_accessed = 0
+        self.age = 0
+
+    def read(self):
+        self.last_accessed = 0
+        return self.data
+
+    def increment_time(self):
+        self.age += 1
+        self.last_accessed += 1
+
+
+class PRA:
+    def __init__(self, pages, alg="FIFO"):
+        self.pages = pages
+        self.alg = alg
+
+    def next_place(self, frames):
+        if self.alg is "LRU":
+            # TODO: implement LRU
+            return None
+        if self.alg is "OPT":
+            # TODO: implement OPT
+            return None
+        return self.fifo([frame.age for frame in frames])  # Default to FIFO
+
+    @staticmethod
+    def fifo(frame_ages):
+        max_age = max(frame_ages)
+        index = frame_ages.index(max_age)
+        return index
+
+
 class Memory:
-    # TODO: write Memory
-    pass
+    def __init__(self, num_frames, page_replacement_algorithm: PRA):
+        self.frames = num_frames * [Frame(None)]  # List of size `num_frames` Frames initialized with None data
+        self.pra = page_replacement_algorithm
+
+    def lookup(self, frame_num):
+        # Increment all frames
+        for frame in self.frames:
+            frame.increment_time()
+        data = self.frames[frame_num].read()
+        return data
+
+    def put(self, page_num, frame):
+        """Puts an array of 256 ints into memory at a frame determined by self.page_replacement_algorithm.
+
+        :returns: the frame number of the newly loaded array
+        :rtype: int
+        """
+        new_frame_num = self.pra.next_place(self.frames)
+        self.frames[new_frame_num] = frame
+        return new_frame_num
 
 
 class BackingStore:
