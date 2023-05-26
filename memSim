@@ -98,9 +98,29 @@ class TLB:
 
 
 class PageTable:
-    # TODO: write PageTable
-    pass
+    def __init__(self):
+        self.entries = 256 * [(-1, False)]  # A list of 256 entries: (pg#, valid)
+        self.lookups = 0
+        self.faults = 0
 
+    def lookup(self, page_num):
+        entry = self.entries[page_num]
+        if self.is_valid(entry):
+            self.lookups += 1
+            return self.get_frame(entry)
+        self.faults += 1
+        return -1
+
+    def is_valid(self, entry):
+        """Simple wrapper for readability. Returns valid bool (second element) of entry tuple."""
+        return entry[1]
+
+    def get_frame(self, entry):
+        """Simple wrapper for readability. Returns frame (first element) of entry tuple."""
+        return entry[0]
+
+    def update(self, page_num, frame_num):
+        self.entries[page_num] = (frame_num, True)
 
 class Memory:
     # TODO: write Memory
