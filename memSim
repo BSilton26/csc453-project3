@@ -24,14 +24,10 @@ parser.add_argument('pra',
 
 
 def main():
-    # args = parser.parse_args()
-    # filename = args.filename
-    # num_frames = args.frames
-    # page_replacement_alg = args.pra
-
-    filename = "test/addresses.txt"
-    num_frames = 2
-    page_replacement_alg = "FIFO"
+    args = parser.parse_args()
+    filename = args.filename
+    num_frames = args.frames
+    page_replacement_alg = args.pra
 
     addresses = []
     # Load all addresses into our array
@@ -55,16 +51,22 @@ def main():
         frame_num = tlb.lookup(page_num)
         if frame_num >= 0:  # TLB hit
             frame_data = memory.lookup(frame_num)
-            byte = frame_data[offset]
-            print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
+            byte = frame_data[offset:offset+1]  # Range so `byte` is a byte literal instead of converted to int
+            print(f"{address}, "
+                  f"{int.from_bytes(byte, byteorder='big', signed=True)}, "
+                  f"{frame_num}, "
+                  f"{frame_data.hex().upper()}")
             continue
         # TLB miss, lookup in page table
         frame_num = page_table.lookup(page_num)
         if frame_num >= 0:  # Page table hit
             tlb.update(page_num, frame_num)
             frame_data = memory.lookup(frame_num)
-            byte = frame_data[offset]
-            print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
+            byte = frame_data[offset:offset+1]
+            print(f"{address}, "
+                  f"{int.from_bytes(byte, byteorder='big', signed=True)}, "
+                  f"{frame_num}, "
+                  f"{frame_data.hex().upper()}")
             continue
         # Page table missed so poll backing store, then update memory, page table, TLB
         block = backing_store.get_block(page_num)
@@ -72,17 +74,17 @@ def main():
         page_table.update(page_num, frame_num)
         tlb.update(page_num, frame_num)
         frame_data = memory.lookup(frame_num)
-        byte = frame_data[offset]
-        print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
-    print("%s = %d\n%s = %d\n%s = %.3f\n%s = %d\n%s = %d\n%s = %.3f".format(
-        "Number of Translated Addresses", len(addresses),
-        "Page Faults", page_table.faults,
-        "Page Fault Rate", page_table.faults / page_table.lookups,
-        "TLB Hits", tlb.hits,
-        "TLB Misses", tlb.misses,
-        "TLB Hit Rate", tlb.hits / (tlb.hits + tlb.misses)
-        )
-    )
+        byte = frame_data[offset:offset+1]
+        print(f"{address}, "
+              f"{int.from_bytes(byte, byteorder='big', signed=True)}, "
+              f"{frame_num}, "
+              f"{frame_data.hex().upper()}")
+    print(f"Number of Translated Addresses = {len(addresses)}\n"
+          f"Page Faults = {page_table.faults}\n"
+          f"Page Fault Rate = {page_table.faults / page_table.lookups:.3f}\n"
+          f"TLB Hits = {tlb.hits}\n"
+          f"TLB Misses = {tlb.misses}\n"
+          f"TLB Hit Rate = {tlb.hits / (tlb.hits + tlb.misses):.3f}")
 
 
 class TLB:
