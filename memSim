@@ -156,8 +156,7 @@ class PRA:
 
     def next_place(self, frames):
         if self.alg == "LRU":
-            # TODO: implement LRU
-            return None
+            return self.lru([frame.last_accessed for frame in frames])
         if self.alg == "OPT":
             # TODO: implement OPT
             return None
@@ -167,6 +166,12 @@ class PRA:
     def fifo(frame_ages):
         max_age = max(frame_ages)
         index = frame_ages.index(max_age)
+        return index
+
+    @staticmethod
+    def lru(times_since_last_access):
+        max_time = max(times_since_last_access)
+        index = times_since_last_access.index(max_time)
         return index
 
 
