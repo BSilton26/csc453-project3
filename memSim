@@ -24,10 +24,14 @@ parser.add_argument('pra',
 
 
 def main():
-    args = parser.parse_args()
-    filename = args.filename
-    num_frames = args.frames
-    page_replacement_alg = args.pra
+    # args = parser.parse_args()
+    # filename = args.filename
+    # num_frames = args.frames
+    # page_replacement_alg = args.pra
+
+    filename = "test/addresses.txt"
+    num_frames = 2
+    page_replacement_alg = "FIFO"
 
     print(f"filename={filename}, frames={num_frames}, pra={page_replacement_alg}")
 
@@ -41,7 +45,8 @@ def main():
 
     tlb = TLB()
     page_table = PageTable()
-    memory = Memory(num_frames, page_replacement_alg)
+    pra = PRA(page_replacement_alg)
+    memory = Memory(num_frames, pra)
     backing_store = BackingStore("BACKING_STORE.bin")
 
     for address in addresses:
@@ -55,16 +60,16 @@ def main():
         frame_num = -1
         frame_num = tlb.lookup(page_num)
         if frame_num >= 0:  # TLB hit
-            frame = memory.lookup(frame_num)
-            byte = frame.data[offset]
+            frame_data = memory.lookup(frame_num)
+            byte = frame_data[offset]
             # TODO: print output
             continue
         # TLB miss, lookup in page table
         frame_num = page_table.lookup(page_num)
         if frame_num >= 0:  # Page table hit
             tlb.update(page_num, frame_num)
-            frame = memory.lookup(frame_num)
-            byte = frame.data[offset]
+            frame_data = memory.lookup(frame_num)
+            byte = frame_data[offset]
             # TODO: print output
             continue
         # Page table missed so poll backing store, then update memory, page table, TLB
@@ -72,6 +77,8 @@ def main():
         frame_num = memory.put(block)
         page_table.update(page_num, frame_num)
         tlb.update(page_num, frame_num)
+        frame_data = memory.lookup(frame_num)
+        byte = frame_data[offset]
     # TODO: print overall stats
 
 
@@ -139,8 +146,7 @@ class Frame:
 
 
 class PRA:
-    def __init__(self, pages, alg="FIFO"):
-        self.pages = pages
+    def __init__(self, alg="FIFO"):
         self.alg = alg
 
     def next_place(self, frames):
@@ -171,20 +177,31 @@ class Memory:
         data = self.frames[frame_num].read()
         return data
 
-    def put(self, page_num, frame):
+    def put(self, frame_data):
         """Puts an array of 256 ints into memory at a frame determined by self.page_replacement_algorithm.
 
         :returns: the frame number of the newly loaded array
         :rtype: int
         """
         new_frame_num = self.pra.next_place(self.frames)
-        self.frames[new_frame_num] = frame
+        new_frame = Frame(frame_data)
+        new_frame.age -= 1
+        self.frames[new_frame_num] = new_frame
         return new_frame_num
 
 
 class BackingStore:
     # TODO: write BackingStore
-    pass
+    def __init__(self, filename):
+        self.blocks = []
+        with open(filename, mode='rb') as f:
+            for block in range(256):
+                self.blocks.append(f.read(256))
+            assert len(self.blocks) == 256
+            assert len(f.read()) == 0  # Make sure that nothing remains for reading in the file
+
+    def get_block(self, page_num):
+        return self.blocks[page_num]
 
 
 if __name__ == "__main__":
