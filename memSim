@@ -71,6 +71,7 @@ def main():
         # Page table missed so poll backing store, then update memory, page table, TLB
         block = backing_store.get_block(page_num)
         frame_num = memory.put(block)
+        page_table.invalidate(frame_num)
         page_table.update(page_num, frame_num)
         tlb.update(page_num, frame_num)
         frame_data = memory.lookup(frame_num)
@@ -111,7 +112,7 @@ class TLB:
 
 class PageTable:
     def __init__(self):
-        self.entries = 256 * [(-1, False)]  # A list of 256 entries: (pg#, valid)
+        self.entries = 256 * [[-1, False]]  # A list of 256 entries: [pg#, valid]
         self.lookups = 0
         self.faults = 0
 
@@ -124,15 +125,20 @@ class PageTable:
         return -1
 
     def is_valid(self, entry):
-        """Simple wrapper for readability. Returns valid bool (second element) of entry tuple."""
+        """Simple wrapper for readability. Returns valid bool (second element) of entry."""
         return entry[1]
 
     def get_frame(self, entry):
-        """Simple wrapper for readability. Returns frame (first element) of entry tuple."""
+        """Simple wrapper for readability. Returns frame number (first element) of entry."""
         return entry[0]
 
     def update(self, page_num, frame_num):
-        self.entries[page_num] = (frame_num, True)
+        self.entries[page_num] = [frame_num, True]
+
+    def invalidate(self, frame_num):
+        """Invalidate any entry that points to the give frame"""
+        for entry in [e for e in self.entries if e[0] == frame_num]:
+            entry[1] = False
 
 
 class Frame:
