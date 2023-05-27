@@ -33,15 +33,11 @@ def main():
     num_frames = 2
     page_replacement_alg = "FIFO"
 
-    print(f"filename={filename}, frames={num_frames}, pra={page_replacement_alg}")
-
     addresses = []
     # Load all addresses into our array
     with open(filename) as file:
         for line in file:
             addresses.append(int(line.strip()))  # Make sure that we strip off whitespace
-
-    print(f"Read addresses: {addresses}")
 
     tlb = TLB()
     page_table = PageTable()
@@ -55,14 +51,12 @@ def main():
         # So, 16 bits for virtual addresses
         page_num = address >> 8  # upper 8 bits
         offset = address & 255  # lower 8 bits
-        print(f"addr: {address:>016b}")
-        print(f"page_num: {page_num:>08b}, offset: {offset:>08b}")
         frame_num = -1
         frame_num = tlb.lookup(page_num)
         if frame_num >= 0:  # TLB hit
             frame_data = memory.lookup(frame_num)
             byte = frame_data[offset]
-            # TODO: print output
+            print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
             continue
         # TLB miss, lookup in page table
         frame_num = page_table.lookup(page_num)
@@ -70,7 +64,7 @@ def main():
             tlb.update(page_num, frame_num)
             frame_data = memory.lookup(frame_num)
             byte = frame_data[offset]
-            # TODO: print output
+            print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
             continue
         # Page table missed so poll backing store, then update memory, page table, TLB
         block = backing_store.get_block(page_num)
@@ -79,7 +73,16 @@ def main():
         tlb.update(page_num, frame_num)
         frame_data = memory.lookup(frame_num)
         byte = frame_data[offset]
-    # TODO: print overall stats
+        print(f"{address}, {byte:d}, {frame_num}, {frame_data.hex().upper()}")
+    print("%s = %d\n%s = %d\n%s = %.3f\n%s = %d\n%s = %d\n%s = %.3f".format(
+        "Number of Translated Addresses", len(addresses),
+        "Page Faults", page_table.faults,
+        "Page Fault Rate", page_table.faults / page_table.lookups,
+        "TLB Hits", tlb.hits,
+        "TLB Misses", tlb.misses,
+        "TLB Hit Rate", tlb.hits / (tlb.hits + tlb.misses)
+        )
+    )
 
 
 class TLB:
@@ -112,8 +115,8 @@ class PageTable:
 
     def lookup(self, page_num):
         entry = self.entries[page_num]
+        self.lookups += 1
         if self.is_valid(entry):
-            self.lookups += 1
             return self.get_frame(entry)
         self.faults += 1
         return -1
@@ -150,10 +153,10 @@ class PRA:
         self.alg = alg
 
     def next_place(self, frames):
-        if self.alg is "LRU":
+        if self.alg == "LRU":
             # TODO: implement LRU
             return None
-        if self.alg is "OPT":
+        if self.alg == "OPT":
             # TODO: implement OPT
             return None
         return self.fifo([frame.age for frame in frames])  # Default to FIFO
@@ -191,7 +194,6 @@ class Memory:
 
 
 class BackingStore:
-    # TODO: write BackingStore
     def __init__(self, filename):
         self.blocks = []
         with open(filename, mode='rb') as f:
