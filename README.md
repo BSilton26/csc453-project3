@@ -1,9 +1,3 @@
-[Program 3](https://docs.google.com/document/d/15LkaozsLaDWZ3BwDPhceZOltQWFCb4GpjFWu-wOPv-w/edit)
-
-Last updated: 9 May 2023
-
-This assignment may be done in pairs
-
 # Virtual Memory Simulator (memSim) 	
 In this project, you will build a virtual memory simulator, which translates virtual memory addresses (like those that come from a process) to physical memory addresses (as managed by the operating system). This assignment is inspired by the “Programming Project” listed in Silberschatz 9th edition, Chapter 9, pages 458-461 with a few small modifications.
 
@@ -56,28 +50,4 @@ The usage of the simulator is this:
 - LRU should be implemented as a “true” least recently used algorithm. (Not an approximate LRU that uses a ‘recent’ bit.)
 - A hit in the FIFO algorithm does not change its position in the FIFO queue.
 - For defaults use 256 frames, and FIFO as the page replacement algorithm.
-
-
-## Grading
-For this assignment, I will run multiple tests. You are welcome to complete only some of the tests for the given number of points shown. For full credit, you must pass all the tests. For any credit, tests must run and pass on the CSL infrastructure (e.g. unix*.csc.calpoly.edu). Also know that there is some inherent ambiguity built into this assignment. For example, how you fill empty frames is unspecified, as is tie-breaking (e.g. multiple pages are eligible for eviction without affecting the miss/hit ratios). No points will be taken off for differences in how ambiguous cases are handled (so long as they are handled correctly).
-
-- Implementation without any modifications from the book. (i.e. hard-coded 256 frames, and no replacement algorithm): 10 points
-- Support for a variable number of frames and FIFO page replacement algorithm: 4 points
-- Support for true LRU page replacement algorithms: 4 points
-- Support for OPT (optimal) page replacement algorithm: 2 points
-
-
-## Deliverables
-Submit a gzip’d tar archive file with all your source code (no binaries). It must include the following:
-
-1. Your source and header file(s). 
-2. If you use a compiled language, a makefile (called Makefile) that will build a memSim executable. 
-  - If you implement memSim in Java, also include a script that will run the program using the same syntax as a compiled C program; e.g. `./memSim reference.txt 16 LRU`
-  - If you implement schedSim in Python make your script executable so that it uses the same syntax as a compiled C program; e.g. `./memSim reference.txt 16 LRU`
-3. A README file that contains:
-  - Your name (and your partner’s name, if you have one)
-  - Any special instructions.
-  - Any other thing you want me to know while I am grading it.
-  - The README file should be plain text, i.e, not a Word document, and should be named “README”, all capitals with no extension.
-
 
